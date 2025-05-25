@@ -1,5 +1,12 @@
 # Devk💫
 
+>📘 Developer Kernel  
+noun | /ˈdɛv-lə-pər ˈkər-nəl/
+
+Definition:  
+A lightweight, self-contained runtime package designed to execute developer-created scripts, tools, or applications — often securely and without requiring traditional compilation or OS-level installation.
+
+
 devk is a free open source .exe alternative for independant python programers that arnt a verified microsoft publisher
 
 ### Installation
