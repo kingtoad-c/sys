@@ -40,7 +40,7 @@ Think of `.devk` as a portable Python executable package designed for simplicity
 
 ### Quick Start
 
-- Create your `.devk` files using the provided GUI tool (`py_to_devk_gui.py`) or command-line scripts.  
+- Create your `.devk` files using the provided GUI tool (`devk-filemaker.bat`) or command-line scripts.  
 - Double-click your `.devk` files or run them via the batch launcher after installation.  
 - Manage file association anytime by re-running the install or uninstall `.bat` files with Admin rights.
 
