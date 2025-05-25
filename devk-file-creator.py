@@ -3,7 +3,6 @@ from tkinter import filedialog, messagebox
 import base64
 import struct
 import os
-import re
 import sys
 import ast
 
@@ -57,7 +56,7 @@ def get_imports_and_python_version(code):
     version = f"{sys.version_info.major}.{sys.version_info.minor}"
     return sorted(imports), version
 
-def generate_devk(input_path, output_path):
+def generate_devk(input_path, output_dir):
     with open(input_path, "r", encoding="utf-8") as f:
         code = f.read()
 
@@ -74,32 +73,46 @@ def generate_devk(input_path, output_path):
     encoded = base64.b64encode(encrypted.encode("utf-8")).decode("utf-8")
     compressed = compress(encoded)
 
+    base_name = os.path.splitext(os.path.basename(input_path))[0]
+    devk_path = os.path.join(output_dir, f"{base_name}.devk")
+    reqs_path = os.path.join(output_dir, f"{base_name}-requirements.txt")
+
     # Write .devk
-    with open(output_path, "wb") as f:
+    with open(devk_path, "wb") as f:
         f.write(compressed)
 
-    return imports, py_version
+    # Write requirements
+    with open(reqs_path, "w", encoding="utf-8") as f:
+        f.write(f"python>={py_version}\n")
+        for imp in imports:
+            f.write(f"{imp}\n")
+
+    return devk_path, reqs_path, imports, py_version
 
 def select_file():
     filepath = filedialog.askopenfilename(filetypes=[("Python Files", "*.py")])
     if not filepath:
         return
 
-    output_path = os.path.splitext(filepath)[0] + ".devk"
+    base_name = os.path.splitext(os.path.basename(filepath))[0]
+    output_dir = os.path.join(os.path.dirname(filepath), f"{base_name}-devk")
+
     try:
-        imports, version = generate_devk(filepath, output_path)
-        msg = f"✅ .devk file created:\n{output_path}\n\n"
-        msg += f"📦 Imports: {', '.join(imports) if imports else 'None'}\n"
-        msg += f"🐍 Python version: {version}"
+        os.makedirs(output_dir, exist_ok=True)
+        devk_path, reqs_path, imports, version = generate_devk(filepath, output_dir)
+        msg = f"✅ Files saved in folder:\n{output_dir}\n\n"
+        msg += f"📦 {os.path.basename(devk_path)}\n📄 {os.path.basename(reqs_path)}\n\n"
+        msg += f"🐍 Python version: {version}\n"
+        msg += f"📚 Imports: {', '.join(imports) if imports else 'None'}"
         messagebox.showinfo("Success", msg)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to create .devk file:\n{e}")
+        messagebox.showerror("Error", f"Failed to create .devk package:\n{e}")
 
 # === GUI Setup ===
 
 root = tk.Tk()
 root.title("Python to .devk Converter")
-root.geometry("400x200")
+root.geometry("420x200")
 
 label = tk.Label(root, text="Select a Python file to convert to .devk format.", font=("Arial", 12))
 label.pack(pady=20)
