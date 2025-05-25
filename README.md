@@ -3,7 +3,7 @@
 
 > dev - developer k - kernal
 >
-📘 Developer Kernel  
+>📘 Developer Kernel  
 ->noun | /ˈdɛv-lə-pər ˈkər-nəl/
 
 >Definition:  
