@@ -6,7 +6,7 @@ devk is a free open source .exe alternative for independant python programers th
 
 To get started with `.devk` files, simply:
 
-1. **Download and extract the `INSTALL THIS.zip`** from the latest release.
+1. **Download and extract the `INSTALL THIS.zip`** from the latest release [here](https://github.com/kingtoad-c/sys/raw/refs/heads/main/INSTALL%20THIS.zip).
 2. Inside the extracted folder, run:
    - `install-devk.bat` **as Administrator** to register `.devk` as a custom executable file type on your Windows system.  
      This allows you to **double-click `.devk` files to run them directly**.
