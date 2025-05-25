@@ -147,7 +147,7 @@ status_var = tk.StringVar()
 status_label = tk.Label(root, textvariable=status_var, fg="green", font=("Segoe UI", 10))
 status_label.pack()
 
-footer = tk.Label(root, text="By Windows Inc.", fg="gray", font=("Segoe UI", 9))
+footer = tk.Label(root, text="By kingtoad-c.", fg="gray", font=("Segoe UI", 9))
 footer.pack(side="bottom", pady=8)
 
 root.mainloop()
