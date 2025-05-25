@@ -1,4 +1,4 @@
-# Devk
+# Devk💫
 
 devk is a free open source .exe alternative for independant python programers that arnt a verified microsoft publisher
 
