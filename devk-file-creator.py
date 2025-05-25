@@ -5,8 +5,6 @@ import struct
 import os
 import sys
 import ast
-import importlib.util
-import sysconfig
 
 def encrypt(text, shift):
     encrypted = ""
@@ -41,22 +39,10 @@ def compress(text):
             i += 1
     return bytes(output)
 
-def is_std_lib(module):
-    if module in sys.builtin_module_names:
-        return True
-    try:
-        spec = importlib.util.find_spec(module)
-        if spec and spec.origin:
-            stdlib_path = sysconfig.get_paths()["stdlib"]
-            return spec.origin.startswith(stdlib_path)
-    except Exception:
-        pass
-    return False
-
 def get_imports_and_python_version(code):
     try:
         tree = ast.parse(code)
-    except SyntaxError:
+    except SyntaxError as e:
         return [], "Invalid Python file"
 
     imports = set()
@@ -67,10 +53,8 @@ def get_imports_and_python_version(code):
         elif isinstance(node, ast.ImportFrom):
             if node.module:
                 imports.add(node.module.split('.')[0])
-
-    third_party = sorted([imp for imp in imports if not is_std_lib(imp)])
     version = f"{sys.version_info.major}.{sys.version_info.minor}"
-    return third_party, version
+    return sorted(imports), version
 
 def generate_devk(input_path, output_dir):
     with open(input_path, "r", encoding="utf-8") as f:
@@ -78,11 +62,13 @@ def generate_devk(input_path, output_dir):
 
     imports, py_version = get_imports_and_python_version(code)
 
-    key = "Mjg0NzM4NjM="
+    # === Encryption setup ===
+    key = "Mjg0NzM4NjM="  # base64-encoded string of int key
     mult = 7417
     original_key = base64.b64decode(key).decode("utf-8")
     shift = int(int(original_key) / mult)
 
+    # Encrypt, base64, compress
     encrypted = encrypt(code, shift)
     encoded = base64.b64encode(encrypted.encode("utf-8")).decode("utf-8")
     compressed = compress(encoded)
@@ -91,9 +77,11 @@ def generate_devk(input_path, output_dir):
     devk_path = os.path.join(output_dir, f"{base_name}.devk")
     reqs_path = os.path.join(output_dir, f"{base_name}-requirements.txt")
 
+    # Write .devk
     with open(devk_path, "wb") as f:
         f.write(compressed)
 
+    # Write requirements
     with open(reqs_path, "w", encoding="utf-8") as f:
         f.write(f"python>={py_version}\n")
         for imp in imports:
@@ -106,48 +94,33 @@ def select_file():
     if not filepath:
         return
 
-    entry_path_var.set(filepath)
-
     base_name = os.path.splitext(os.path.basename(filepath))[0]
     output_dir = os.path.join(os.path.dirname(filepath), f"{base_name}-devk")
 
     try:
         os.makedirs(output_dir, exist_ok=True)
         devk_path, reqs_path, imports, version = generate_devk(filepath, output_dir)
-
-        status_var.set(f"✅ Success: Files saved to {output_dir}")
-        details = f"\nPython >= {version}\nImports: {', '.join(imports) if imports else 'None'}"
-        messagebox.showinfo("Finished", f".devk and requirements.txt created.\n{details}")
+        msg = f"✅ Files saved in folder:\n{output_dir}\n\n"
+        msg += f"📦 {os.path.basename(devk_path)}\n📄 {os.path.basename(reqs_path)}\n\n"
+        msg += f"🐍 Python version: {version}\n"
+        msg += f"📚 Imports: {', '.join(imports) if imports else 'None'}"
+        messagebox.showinfo("Success", msg)
     except Exception as e:
-        status_var.set("❌ Failed.")
-        messagebox.showerror("Error", f"Conversion failed:\n{e}")
+        messagebox.showerror("Error", f"Failed to create .devk package:\n{e}")
 
 # === GUI Setup ===
 
 root = tk.Tk()
 root.title("Python to .devk Converter")
-root.geometry("550x280")
-root.resizable(False, False)
+root.geometry("420x200")
 
-tk.Label(root, text="📦 Python to .devk File Converter", font=("Segoe UI", 16, "bold")).pack(pady=10)
+label = tk.Label(root, text="Select a Python file to convert to .devk format.", font=("Arial", 12))
+label.pack(pady=20)
 
-frame = tk.Frame(root)
-frame.pack(pady=5)
-
-tk.Label(frame, text="Selected Python File:", font=("Segoe UI", 11)).pack(anchor="w")
-
-entry_path_var = tk.StringVar()
-entry = tk.Entry(frame, textvariable=entry_path_var, width=70, font=("Segoe UI", 10))
-entry.pack(padx=10, pady=5)
-
-btn = tk.Button(root, text="📂 Choose File", font=("Segoe UI", 11), command=select_file, width=20)
+btn = tk.Button(root, text="Choose Python File", font=("Arial", 12), command=select_file)
 btn.pack(pady=10)
 
-status_var = tk.StringVar()
-status_label = tk.Label(root, textvariable=status_var, fg="green", font=("Segoe UI", 10))
-status_label.pack()
-
-footer = tk.Label(root, text="By kingtoad-c.", fg="gray", font=("Segoe UI", 9))
-footer.pack(side="bottom", pady=8)
+footer = tk.Label(root, text="By Windows Inc.", fg="gray", font=("Arial", 9))
+footer.pack(side="bottom", pady=5)
 
 root.mainloop()
