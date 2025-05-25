@@ -120,7 +120,7 @@ label.pack(pady=20)
 btn = tk.Button(root, text="Choose Python File", font=("Arial", 12), command=select_file)
 btn.pack(pady=10)
 
-footer = tk.Label(root, text="By Windows Inc.", fg="gray", font=("Arial", 9))
+footer = tk.Label(root, text="By kingtoad-c", fg="gray", font=("Arial", 9))
 footer.pack(side="bottom", pady=5)
 
 root.mainloop()
