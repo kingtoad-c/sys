@@ -61,7 +61,7 @@ Think of `.devk` as a portable Python executable package designed for simplicity
 - Manage file association anytime by re-running the install or uninstall `.bat` files with Admin rights.
 
 ---
-### down sides
+### down sides 📛
 
 since .devk logic uses exec to run the script input is not supported 
 we suggest using a gui like tkinter for input
