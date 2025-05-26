@@ -84,4 +84,5 @@ decrypted_file = decrypt(text, shift)
 try:
     exec(decrypted_file)
 except EOFError:
-    print("⚠️ Input not supported in .devk runtime. Skipping user input.")
+    print()
+    print("~ Input not supported in .devk runtime. try use gui alternatives like tkinter ect. ~")
