@@ -89,6 +89,6 @@ with tempfile.NamedTemporaryFile("w", delete=False, suffix=".py", encoding="utf-
 
 
 try:
-    subprocess.run([sys.executable, temp_filename], check=True)
+    subprocess.run([sys.executable, temp_filename], check=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
 finally:
     os.remove(temp_filename)
