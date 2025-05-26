@@ -83,9 +83,10 @@ shift = autocrack(key, mult)
 
 decrypted_file = decrypt(text, shift)
 
-with tempfile.NamedTemporaryFile("w", delete=False, suffix=".py") as temp_file:
+with tempfile.NamedTemporaryFile("w", delete=False, suffix=".py", encoding="utf-8") as temp_file:
     temp_file.write(decrypted_file)
     temp_filename = temp_file.name
+
 
 try:
     subprocess.run([sys.executable, temp_filename], check=True)
