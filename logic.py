@@ -2,6 +2,8 @@ import sys
 import base64
 import struct
 import os
+import subprocess
+import tempfile
 
 def decompress_bytes_to_text(data: bytes) -> str:
     return decompress(data)
@@ -81,4 +83,11 @@ shift = autocrack(key, mult)
 
 decrypted_file = decrypt(text, shift)
 
-exec(decrypted_file)
+with tempfile.NamedTemporaryFile("w", delete=False, suffix=".py") as temp_file:
+    temp_file.write(decrypted_file)
+    temp_filename = temp_file.name
+
+try:
+    subprocess.run([sys.executable, temp_filename], check=True)
+finally:
+    os.remove(temp_filename)
