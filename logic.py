@@ -2,8 +2,6 @@ import sys
 import base64
 import struct
 import os
-import subprocess
-import tempfile
 
 def decompress_bytes_to_text(data: bytes) -> str:
     return decompress(data)
@@ -83,12 +81,7 @@ shift = autocrack(key, mult)
 
 decrypted_file = decrypt(text, shift)
 
-with tempfile.NamedTemporaryFile("w", delete=False, suffix=".py", encoding="utf-8") as temp_file:
-    temp_file.write(decrypted_file)
-    temp_filename = temp_file.name
-
-
 try:
-    subprocess.run([sys.executable, temp_filename], check=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
-finally:
-    os.remove(temp_filename)
+    exec(decrypted_file)
+except EOFError:
+    print("⚠️ Input not supported in .devk runtime. Skipping user input.")
