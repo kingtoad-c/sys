@@ -14,6 +14,10 @@
 
 devk is a free open source .exe alternative for independant python programers that arnt a verified microsoft publisher
 
+### how do i make .devk programs?
+
+to make .devk programs use the devk file maker included with the .zip and select your python file to convert it to a safe encrypted .devk program
+
 ### Installation
 
 To get started with `.devk` files, simply:
@@ -55,6 +59,12 @@ Think of `.devk` as a portable Python executable package designed for simplicity
 - Create your `.devk` files using the provided GUI tool (`devk-filemaker.bat`) or command-line scripts.  
 - Double-click your `.devk` files or run them via the batch launcher after installation.  
 - Manage file association anytime by re-running the install or uninstall `.bat` files with Admin rights.
+
+---
+### down sides
+
+since .devk logic uses exec to run the script input is not supported 
+we suggest using a gui like tkinter for input
 
 ---
 
